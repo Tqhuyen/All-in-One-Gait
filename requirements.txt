@@ -28,4 +28,3 @@ paddlepaddle-gpu
 torch
 torchaudio
 torchvision
---index-url https://download.pytorch.org/whl/cu118
