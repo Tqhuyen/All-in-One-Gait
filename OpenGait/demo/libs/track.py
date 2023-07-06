@@ -31,6 +31,7 @@ track_cfgs = {
     },
     "device": "gpu",
     "save_result": "True",
+    "save_result_vid": "False"
 }
 colors = [(255,0,0),(0,255,0),(0,0,255),(0,0,0)]
 def get_color(idx):
@@ -54,6 +55,8 @@ def loadckpt(exp):
 
     logger.info("\tFusing model...")
     model = fuse_model(model)
+    # if device == torch.device("cuda"):
+    #     model = model.half()
     model = model.half()
     return model
 
@@ -72,7 +75,10 @@ def track(video_path, video_save_folder):
     trt_file = None
     decoder = None
     device = torch.device("cuda" if track_cfgs["device"] == "gpu" else "cpu")
-    predictor = Predictor(model, exp, trt_file, decoder, device, True)
+    fp16=True
+    if device == 'cpu':
+        fp16=False
+    predictor = Predictor(model, exp, trt_file, decoder, device, fp16=fp16)
 
     cap = cv2.VideoCapture(video_path)
     width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)  # float
@@ -85,12 +91,8 @@ def track(video_path, video_save_folder):
     fps = cap.get(cv2.CAP_PROP_FPS)
     os.makedirs(video_save_folder, exist_ok=True)
     save_video_name = video_path.split("/")[-1]
-    save_video_path = osp.join(video_save_folder, save_video_name)
-    print(f"video save_path is {save_video_path}")
-    vid_writer = cv2.VideoWriter(
-        save_video_path, cv2.VideoWriter_fourcc(*"mp4v"), fps, (int(width), int(height))
-    )
-
+    # save_video_path = osp.join(video_save_folder, save_video_name)
+    # print(f"video save_path is {save_video_path}")
     save_video_name = save_video_name.split(".")[0]
     results = []
     track_results={}
@@ -103,9 +105,9 @@ def track(video_path, video_save_folder):
             outputs, img_info = predictor.inference(frame, timer)
             if outputs[0] is not None:
                 online_targets = tracker.update(outputs[0], [img_info['height'], img_info['width']], exp.test_size)
-                online_tlwhs = []
-                online_ids = []
-                online_scores = []
+                # online_tlwhs = []
+                # online_ids = []
+                # online_scores = []
                 for t in online_targets:
                     tlwh = t.tlwh
                     tid = t.track_id
@@ -115,27 +117,27 @@ def track(video_path, video_save_folder):
                     tid = tid - diff
                     vertical = tlwh[2] / tlwh[3] > 1.6
                     if tlwh[2] * tlwh[3] > 10 and not vertical:
-                        online_tlwhs.append(tlwh)
-                        online_ids.append(tid)
-                        online_scores.append(t.score)
+                        # online_tlwhs.append(tlwh)
+                        # online_ids.append(tid)
+                        # online_scores.append(t.score)
                         if frame_id not in track_results:
                             track_results[frame_id] = []
                         track_results[frame_id].append([tid, tlwh[0], tlwh[1], tlwh[2], tlwh[3]])
                         results.append(
                             f"{frame_id},{tid},{tlwh[0]:.2f},{tlwh[1]:.2f},{tlwh[2]:.2f},{tlwh[3]:.2f},{t.score:.2f},-1,-1,-1\n"
                         )
-                timer.toc()
-                online_im = plot_tracking(
-                    img_info['raw_img'], online_tlwhs, online_ids, frame_id=frame_id + 1, fps=1. / timer.average_time
-                )
-            else:
-                timer.toc()
-                online_im = img_info['raw_img']
-            if track_cfgs["save_result"] == "True":
-                vid_writer.write(online_im)
-            ch = cv2.waitKey(1)
-            if ch == 27 or ch == ord("q") or ch == ord("Q"):
-                break
+                # timer.toc()
+                # online_im = plot_tracking(
+                #     img_info['raw_img'], online_tlwhs, online_ids, frame_id=frame_id + 1, fps=1. / timer.average_time
+                # )
+            # else:
+            #     timer.toc()
+                # online_im = img_info['raw_img']
+            # if track_cfgs["save_result_vid"] == "True":
+            #     vid_writer.write(online_im)
+            # ch = cv2.waitKey(1)
+            # if ch == 27 or ch == ord("q") or ch == ord("Q"):
+            #     break
         else:
             break
         frame_id += 1
@@ -155,6 +157,7 @@ def writeresult(pgdict, video_path, video_save_folder):
         video_path (Path): Path of input video
         video_save_folder (Path): Tracking video storage root path after processing
     """
+    logger("Write result")
     device = torch.device("cuda" if track_cfgs["device"] == "gpu" else "cpu")
     trt_file = None
     decoder = None
@@ -222,7 +225,7 @@ def writeresult(pgdict, video_path, video_save_folder):
             else:
                 timer.toc()
                 online_im = img_info['raw_img']
-            if track_cfgs["save_result"] == "True":
+            if track_cfgs["save_result_vid"] == "True":
                 vid_writer.write(online_im)
             ch = cv2.waitKey(1)
             if ch == 27 or ch == ord("q") or ch == ord("Q"):
