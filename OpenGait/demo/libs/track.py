@@ -157,7 +157,7 @@ def writeresult(pgdict, video_path, video_save_folder):
         video_path (Path): Path of input video
         video_save_folder (Path): Tracking video storage root path after processing
     """
-    logger("Write result")
+    logger.info("Write result")
     device = torch.device("cuda" if track_cfgs["device"] == "gpu" else "cpu")
     trt_file = None
     decoder = None
