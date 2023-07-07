@@ -89,11 +89,11 @@ def track(video_path, video_save_folder, save_res=False, save_vid=False):
     fps = cap.get(cv2.CAP_PROP_FPS)
     os.makedirs(video_save_folder, exist_ok=True)
     save_video_name = video_path.split("/")[-1]
-    save_video_path = osp.join(video_save_folder, save_video_name)
+    save_video_path = osp.join(video_save_folder, save_video_name[:-4] +".webm")
     print(f"video save_path is {save_video_path}")
     save_video_name = save_video_name.split(".")[0]
     vid_writer = cv2.VideoWriter(
-        save_video_path, cv2.VideoWriter_fourcc(*"mp4v"), fps, (int(width), int(height))
+        save_video_path, cv2.VideoWriter_fourcc(*"vp80"), fps, (int(width), int(height))
     )
     results = []
     track_results={}

@@ -48,7 +48,7 @@ def comparefeat(embs, gallery_feat: dict, pid, threshold_value):
     """
     probe_name = pid.split("-")[0]
     min = threshold_value
-    id = None
+    id = "data_ref-0"
     dic={}
     for key in gallery_feat:
         if key == probe_name:
@@ -65,6 +65,7 @@ def comparefeat(embs, gallery_feat: dict, pid, threshold_value):
                         id = gid
                         min = distance.float()
     dic_sort= sorted(dic.items(), key=lambda d:d[1], reverse = False)
+    print(dic_sort)
     if id is None:
         print("############## no id #####################")
     return id, dic_sort

@@ -77,11 +77,11 @@ def gaitfeat_compare(probe_feat:dict, gallery_feat:dict):
     for inputs in probe_feat[probe]:
         number = list(inputs.keys())[0]
         probeid = probe + "-" + number
-        galleryid, idsdict = gc.comparefeat(inputs[number]['undefined'], gallery_feat, probeid, 100)
+        galleryid, idsdict = gc.comparefeat(inputs[number]['undefined'], gallery_feat, probeid, 10)
         pg_dict[probeid] = galleryid
         pg_dicts[probeid] = idsdict
-    # print("=================== pg_dicts ===================")
-    # print(pg_dicts)
+    print("=================== pg_dict ===================")
+    print(pg_dict)
     return pg_dict
 
 def extract_sil(sil, save_path):
