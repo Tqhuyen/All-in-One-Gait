@@ -86,12 +86,16 @@ def compare_data(video_path):
         my_dict = pickle.load(open(feat, 'rb'))
         feat_path = feat.split("/")[-8]
         temp_dict = {feat_path: {'undefined': my_dict}}
-        print(my_dict)
         compare_list.append(temp_dict)
     compare_dict = {"data_ref": compare_list}
     res = compare(gait_feat, compare_dict)
     print(res)
-    
+    for val in list(res.values()):
+        current_id = val.split("-")[-1]
+        json_dir = osp.join(DATA_REFERENCE, current_id, "info.json")
+        f = open(json_dir)
+        data = json.load(f)
+        print(data)
 
 def main():
     # new_id_prepare(human_info=human_info, data_info=data_info)
