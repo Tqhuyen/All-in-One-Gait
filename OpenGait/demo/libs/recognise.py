@@ -1,6 +1,7 @@
 import os
 import os.path as osp
 import pickle
+import json
 import sys
 # import shutil
 
@@ -57,7 +58,7 @@ def gait_sil(sils, embs_save_path):
         feat = {}
         feat[type] = {}
         feat[type][view] = embs
-        feats[id].append(feat)        
+        feats[id].append(feat)
     return feats    
 
 def gaitfeat_compare(probe_feat:dict, gallery_feat:dict):

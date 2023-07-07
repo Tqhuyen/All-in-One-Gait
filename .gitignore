@@ -6,3 +6,5 @@ $ cat .gitignore
 .DS_Store?
 
 data_ref
+data_pool
+data_test

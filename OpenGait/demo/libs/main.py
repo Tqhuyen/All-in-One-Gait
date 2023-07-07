@@ -9,52 +9,94 @@ from recognise import *
 # current folder = OpenGait
 from config import *
 import json
+from glob import glob
+import pickle
+
 human_info = {
-    "id": "demo4",
-    "name": "4 nguoi trong data mau"
+    "id": "01",
+    "name": "both"
 }
 
 data_info = {
     "view": "front"
 }
 
+
+
+
 def new_id_prepare(human_info, data_info):
     print(human_info["id"])
     view_dir = osp.join(DATA_REFERENCE, human_info["id"], 'data', data_info['view'])
-    data_raw_dir = os.path.join(view_dir, 'data_raw')
     feat_dir = osp.join(view_dir, 'GaitFeatures')
     sil_dir = osp.join(view_dir, 'GaitSil')
     track_dir = osp.join(view_dir, 'Track')
-    print(data_raw_dir)
     if not osp.exists(view_dir):
         os.makedirs(feat_dir)
         os.makedirs(sil_dir)
         os.makedirs(track_dir)
-        os.makedirs(data_raw_dir)
     else:
         print("dir already created, choose another id or check data")
     json_dir = osp.join(DATA_REFERENCE, human_info["id"], 'info.json')
     with open(json_dir, "w") as fp:
-        json.dump(human_info , fp) 
-def add_data(vid_name, human_info, data_info):
+        json.dump(human_info , fp)
+        
+        
+        
+def add_data(vid_path, human_info, data_info):
     current_time = time.localtime()
     timestamp = time.strftime("%Y_%m_%d_%H_%M_%S", current_time)
-    video_path = osp.join(DATA_REFERENCE, human_info["id"], "data", data_info["view"],"data_raw", vid_name)
-    video_save = osp.join(DATA_REFERENCE, human_info["id"], "data", data_info["view"], "Track", timestamp)
-    track_result = track(video_path=video_path, video_save_folder=video_save)
+    # video_path = osp.join(DATA_REFERENCE, human_info["id"], "data", data_info["view"],"data_raw", vid_name)
+    
+    video_save = osp.join(DATA_REFERENCE, human_info["id"], "data", data_info["view"], "Track")
+    track_result = track(video_path=vid_path, video_save_folder=video_save, save_res=True, save_vid=False)
     
     sil_path = osp.join(DATA_REFERENCE, human_info["id"], "data", data_info["view"], "GaitSil")
     print(sil_path)
+    data_silhouette = seg(video_path=vid_path, track_result=track_result, sil_save_path=sil_path)
+    
+    gait_feat_dir = osp.join(DATA_REFERENCE, human_info["id"], "data", data_info["view"], "GaitFeatures")
+    print(gait_feat_dir)
+    gait_feat = extract_sil(data_silhouette, gait_feat_dir)
+    print(gait_feat)
+    feat = gait_feat_dir + "/huyen_train/001/undefined/undefined.pkl"
+    my_dict = pickle.load(open(feat, 'rb'))
+    print(my_dict)
+    
+    
+    
+def compare_data(video_path):
+    current_time = time.localtime()
+    timestamp = time.strftime("%Y_%m_%d_%H_%M_%S", current_time)
+    vid_name = video_path.split("/")[-1]
+    # video_path = osp.join(DATA_TEST, human_info["id"], "data", data_info["view"],"data_raw", vid_name)
+    video_save = osp.join(DATA_TEST, human_info["id"], "data", data_info["view"], "Track")
+    track_result = track(video_path=video_path, video_save_folder=video_save, save_res=False, save_vid=True)
+    
+    sil_path = osp.join(DATA_TEST, human_info["id"], "data", data_info["view"], "GaitSil")
+    print(sil_path)
     data_silhouette = seg(video_path=video_path, track_result=track_result, sil_save_path=sil_path)
     
-    # gait_feat_dir = osp.join(DATA_REFERENCE, human_info["id"], "data", data_info["view"], "GaitFeatures/")
-    # print(gait_feat_dir)
-    # gait_feat = extract_sil(data_silhouette, gait_feat_dir)
+    gait_feat_dir = osp.join(DATA_TEST, human_info["id"], "data", data_info["view"], "GaitFeatures/")
+    print(gait_feat_dir)
+    gait_feat = extract_sil(data_silhouette, gait_feat_dir)
+    print(gait_feat)
+    feat_dir = glob(DATA_REFERENCE + "/*/*/*/GaitFeatures/*/001/undefined/undefined.pkl")
+    compare_list = []
+    for feat in feat_dir:
+        my_dict = pickle.load(open(feat, 'rb'))
+        feat_path = feat.split("/")[-8]
+        temp_dict = {feat_path: {'undefined': my_dict}}
+        print(my_dict)
+        compare_list.append(temp_dict)
+    compare_dict = {"data_ref": compare_list}
+    res = compare(gait_feat, compare_dict)
+    print(res)
     
 
 def main():
-    new_id_prepare(human_info=human_info, data_info=data_info)
-    add_data("gallery.mp4", human_info=human_info, data_info=data_info)
+    # new_id_prepare(human_info=human_info, data_info=data_info)
+    # add_data("/root/All-in-One-Gait/data_pool/huyen_train.mp4", human_info=human_info, data_info=data_info)
+    compare_data("/root/All-in-One-Gait/data_pool/two_front_train.mp4")
     # output_dir = "./demo/output/OutputVideos/"
     # os.makedirs(output_dir, exist_ok=True)
     # current_time = time.localtime()
@@ -118,7 +160,7 @@ def main():
     # gallery_probe3_result = compare(probe3_feat, gallery_feat)
     # gallery_probe4_result = compare(probe4_feat, gallery_feat)
 
-    # # # write the result back to the video
+    # # write the result back to the video
     # writeresult(gallery_probe1_result, probe1_video_path, video_save_folder)
     # writeresult(gallery_probe2_result, probe2_video_path, video_save_folder)
     # writeresult(gallery_probe3_result, probe3_video_path, video_save_folder)
